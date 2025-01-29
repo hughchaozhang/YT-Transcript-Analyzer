@@ -259,12 +259,12 @@ export default function SearchPage() {
                             : "Analyze"}
                       </button>
                       {analysis?.transcript && (
-                        <button
-                          onClick={() => showTranscript(videoId)}
+                      <button
+                        onClick={() => showTranscript(videoId)}
                           className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-                        >
-                          Show Transcript
-                        </button>
+                      >
+                        Show Transcript
+                      </button>
                       )}
                       {(analysis?.analysis !== null && analysis?.analysis !== undefined) && (
                         <button

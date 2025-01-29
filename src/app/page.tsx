@@ -98,23 +98,30 @@ export default function Home() {
           </div>
         )}
 
-        {(transcript || isAnalyzing || analysis) && !isLoading && (
-          <div className="flex gap-4">
-            <button
-              onClick={() => openModal("hook")}
-              disabled={isAnalyzing || !analysis}
-              className="flex-1 bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAnalyzing ? "Analyzing..." : "View Hook Analysis"}
-            </button>
-            <button
-              onClick={() => openModal("transcript")}
-              className="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
-            >
-              View Full Transcript
-            </button>
-          </div>
-        )}
+        <div className="flex gap-4">
+          <button
+            onClick={() => openModal("hook")}
+            disabled={isAnalyzing || !analysis}
+            className={`flex-1 py-3 rounded-lg text-white ${
+              analysis 
+                ? "bg-emerald-600 hover:bg-emerald-700" 
+                : "bg-emerald-900 cursor-not-allowed"
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {isAnalyzing ? "Analyzing..." : "View Hook Analysis"}
+          </button>
+          <button
+            onClick={() => openModal("transcript")}
+            disabled={!transcript}
+            className={`flex-1 py-3 rounded-lg text-white ${
+              transcript 
+                ? "bg-purple-600 hover:bg-purple-700" 
+                : "bg-purple-900 cursor-not-allowed"
+            }`}
+          >
+            View Full Transcript
+          </button>
+        </div>
 
         <Dialog
           open={isOpen}
