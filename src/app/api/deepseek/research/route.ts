@@ -7,28 +7,25 @@ const openai = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || "",
 });
 
-const SYSTEM_PROMPT = `You are an expert at analyzing YouTube video transcripts and identifying hook techniques and content structure. Analyze the transcript in two parts:
+const SYSTEM_PROMPT = `You are an expert at analyzing YouTube video transcripts in the context of specific research questions. Your task is to:
 
-1. Intro Analysis: For each sentence in the introduction (first few sentences), explain the specific hook technique being used in a single concise sentence.
-
-2. Body Outline: Extract up to 6 main points from the rest of the content, formatted as a simple outline.
+1. Analyze the transcript and identify key points that are relevant to the research question
+2. Break down the analysis into distinct, focused cards
+3. Each card should have:
+   - A clear, concise title that summarizes the key point
+   - A brief analysis (maximum 5 sentences) explaining how it relates to the research question
 
 Return your response as a JSON object (not wrapped in any markdown code blocks) with this structure:
 {
-  "introAnalysis": [
+  "cards": [
     {
-      "text": "The actual sentence from the video",
-      "technique": "One sentence explanation of the technique used"
+      "title": "Clear, action-oriented title",
+      "analysis": "Concise analysis text (max 5 sentences)"
     }
-  ],
-  "bodyOutline": [
-    "Main point 1",
-    "Main point 2"
   ]
 }`;
 
 function cleanJsonResponse(text: string): string {
-  // Remove markdown code block syntax if present
   const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (jsonMatch) {
     return jsonMatch[1].trim();
@@ -38,26 +35,34 @@ function cleanJsonResponse(text: string): string {
 
 export async function POST(request: Request) {
   try {
-    const { transcript } = await request.json();
+    const { transcript, question } = await request.json();
 
-    if (!transcript) {
-      return NextResponse.json({ error: "Transcript is required" }, { status: 400 });
+    if (!transcript || !question) {
+      return NextResponse.json(
+        { error: "Both transcript and research question are required" },
+        { status: 400 }
+      );
     }
 
-    // DeepSeek's context window is 64k tokens, so we truncate to ~180,000 characters
-    // (assuming ~3 characters per token as a conservative estimate)
-    // We will use 100,000 characters as a conservative estimate and cost reduction
+    if (question.length < 20 || question.length > 10000) {
+      return NextResponse.json(
+        { error: "Research question must be between 20 and 10,000 characters" },
+        { status: 400 }
+      );
+    }
+
+    // Limit to 100,000 characters as specified
     const truncatedTranscript = transcript.slice(0, 100000);
 
-    console.log('Making request to DeepSeek API...');
+    console.log('Making request to DeepSeek API for research analysis...');
     const completion = await openai.chat.completions.create({
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: truncatedTranscript }
+        { role: "user", content: `Research Question: ${question}\n\nTranscript: ${truncatedTranscript}` }
       ],
       model: "deepseek-chat",
-      temperature: 1.0, // default temperature for consistent analysis
-      max_tokens: 4000, // Increased token limit for longer analysis
+      temperature: 0.7,
+      max_tokens: 4000,
     });
 
     // Log token usage
@@ -67,7 +72,7 @@ export async function POST(request: Request) {
         inputTokens: completion.usage.prompt_tokens,
         outputTokens: completion.usage.completion_tokens,
         totalTokens: completion.usage.total_tokens,
-        endpoint: "analyze",
+        endpoint: "research",
       });
     }
 
@@ -79,7 +84,6 @@ export async function POST(request: Request) {
     console.log('DeepSeek response:', analysisText);
 
     try {
-      // Clean the response before parsing
       const cleanedText = cleanJsonResponse(analysisText);
       console.log('Cleaned response:', cleanedText);
       

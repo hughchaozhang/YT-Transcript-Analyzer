@@ -23,7 +23,7 @@ export default function RootLayout({
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <span className="text-white font-bold">YouTube Tools</span>
+                  <span className="text-white font-bold">Creator Zone</span>
                 </div>
                 <div className="ml-10 flex items-baseline space-x-4">
                   <Link
@@ -33,10 +33,10 @@ export default function RootLayout({
                     Transcript Analyzer
                   </Link>
                   <Link
-                    href="/search"
+                    href="/research"
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                   >
-                    Youtube Search
+                    Youtube Research
                   </Link>
                 </div>
               </div>
