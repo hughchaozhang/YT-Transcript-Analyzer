@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { logTokenUsage } from "../utils/tokenLogger";
 
 const openai = new OpenAI({
   baseURL: 'https://api.deepseek.com/v1',
@@ -43,8 +44,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Transcript is required" }, { status: 400 });
     }
 
-    // Limit context window to ~4000 tokens by truncating to ~12000 characters
-    const truncatedTranscript = transcript.slice(0, 12000);
+    // Limit context window to ~64k tokens by truncating to ~180,000 characters
+    // (assuming ~3 characters per token as a conservative estimate)
+    const truncatedTranscript = transcript.slice(0, 180000);
 
     console.log('Making request to DeepSeek API...');
     const completion = await openai.chat.completions.create({
@@ -53,9 +55,20 @@ export async function POST(request: Request) {
         { role: "user", content: truncatedTranscript }
       ],
       model: "deepseek-chat",
-      temperature: 0.7,
-      max_tokens: 2000,
+      temperature: 1.0, // default temperature for consistent analysis
+      max_tokens: 4000, // Increased token limit for longer analysis
     });
+
+    // Log token usage
+    if (completion.usage) {
+      logTokenUsage({
+        timestamp: new Date().toISOString(),
+        inputTokens: completion.usage.prompt_tokens,
+        outputTokens: completion.usage.completion_tokens,
+        totalTokens: completion.usage.total_tokens,
+        endpoint: "analyze",
+      });
+    }
 
     if (!completion.choices[0]?.message?.content) {
       throw new Error("No response content from DeepSeek API");
