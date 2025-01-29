@@ -74,44 +74,49 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gray-900">
-      <div className="w-full max-w-xl">
-        <h1 className="text-2xl font-bold text-center text-gray-100 mb-4">YouTube Transcript Analyzer</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Paste YouTube URL here..."
-            className="w-full px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-500"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Processing..." : "Analyze Video"}
-          </button>
+    <main className="min-h-screen bg-gray-900 p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold text-center text-gray-100 mb-8">
+          YouTube Transcript Analyzer
+        </h1>
+        
+        <form onSubmit={handleSubmit} className="mb-8">
+          <div className="flex gap-4">
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Paste YouTube URL here..."
+              className="flex-1 px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-500"
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Processing..." : "Analyze Video"}
+            </button>
+          </div>
         </form>
 
         {error && (
-          <div className="mt-4 p-4 bg-red-900/50 text-red-200 rounded-lg border border-red-700">
+          <div className="mb-8 p-4 bg-red-900/50 text-red-200 rounded-lg border border-red-700">
             {error}
           </div>
         )}
 
         {(transcript || isAnalyzing || analysis) && !isLoading && (
-          <div className="mt-8 space-y-4">
+          <div className="flex gap-4">
             <button
               onClick={() => openModal("hook")}
               disabled={isAnalyzing || !analysis}
-              className="w-full bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isAnalyzing ? "Analyzing..." : "View Hook Analysis"}
             </button>
             <button
               onClick={() => openModal("transcript")}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
+              className="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
             >
               View Full Transcript
             </button>
