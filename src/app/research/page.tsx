@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Dialog } from "@headlessui/react";
+import { fetchTranscript, getVideoIdFromUrl } from "@/lib/youtubeId-fetchTranscript";
 
 interface VideoResult {
   title: string;
@@ -32,6 +33,7 @@ interface VideoAnalysis {
     cards: ResearchCard[];
   } | null;
   isAnalyzing: boolean;
+  isHidden: boolean;
   error?: string;
 }
 
@@ -67,11 +69,6 @@ export default function SearchPage() {
     }
   };
 
-  const getVideoIdFromUrl = (url: string): string => {
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/v\/))([^"&?\/\s]{11})/);
-    return match ? match[1] : "";
-  };
-
   const analyzeVideo = async (video: VideoResult) => {
     const videoId = getVideoIdFromUrl(video.link);
     if (!videoId) return;
@@ -84,18 +81,14 @@ export default function SearchPage() {
         transcript: "",
         analysis: null,
         isAnalyzing: true,
+        isHidden: false,
         error: undefined
       }
     }));
 
     try {
       // Fetch transcript
-      const transcriptResponse = await fetch(`/api/youtube/transcript?url=${encodeURIComponent(video.link)}&text=true`);
-      if (!transcriptResponse.ok) {
-        throw new Error("Failed to fetch transcript");
-      }
-      const transcriptData = await transcriptResponse.json();
-      const transcript = transcriptData.content;
+      const transcript = await fetchTranscript(video.link);
 
       // Update state with transcript
       setVideoAnalyses(prev => ({
@@ -130,7 +123,8 @@ export default function SearchPage() {
         [videoId]: {
           ...prev[videoId],
           analysis: analysisData,
-          isAnalyzing: false
+          isAnalyzing: false,
+          isHidden: false
         }
       }));
     } catch (err) {
@@ -139,10 +133,21 @@ export default function SearchPage() {
         [videoId]: {
           ...prev[videoId],
           error: err instanceof Error ? err.message : "Failed to analyze video",
-          isAnalyzing: false
+          isAnalyzing: false,
+          isHidden: false
         }
       }));
     }
+  };
+
+  const toggleResults = (videoId: string) => {
+    setVideoAnalyses(prev => ({
+      ...prev,
+      [videoId]: {
+        ...prev[videoId],
+        isHidden: !prev[videoId].isHidden
+      }
+    }));
   };
 
   const showTranscript = (videoId: string) => {
@@ -244,10 +249,14 @@ export default function SearchPage() {
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() => analyzeVideo(video)}
-                        disabled={!isValidResearchQuestion || analysis?.isAnalyzing}
+                        disabled={!isValidResearchQuestion || analysis?.isAnalyzing || (analysis?.analysis !== null && analysis?.analysis !== undefined)}
                         className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {analysis?.isAnalyzing ? "Analyzing..." : "Analyze"}
+                        {analysis?.isAnalyzing 
+                          ? "Analyzing..." 
+                          : analysis?.analysis 
+                            ? "Analysis Completed" 
+                            : "Analyze"}
                       </button>
                       {analysis?.transcript && (
                         <button
@@ -255,6 +264,14 @@ export default function SearchPage() {
                           className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
                         >
                           Show Transcript
+                        </button>
+                      )}
+                      {(analysis?.analysis !== null && analysis?.analysis !== undefined) && (
+                        <button
+                          onClick={() => toggleResults(videoId)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          {analysis.isHidden ? "Show Results" : "Hide Results"}
                         </button>
                       )}
                     </div>
@@ -267,7 +284,7 @@ export default function SearchPage() {
                   </div>
                 )}
 
-                {analysis?.analysis && (
+                {analysis?.analysis && !analysis.isHidden && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     {analysis.analysis.cards.map((card, index) => (
                       <div key={index} className="bg-gray-800 rounded-lg p-4">

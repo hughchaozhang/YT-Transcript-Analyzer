@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
+import { fetchTranscript } from "@/lib/youtubeId-fetchTranscript";
 
 interface Analysis {
   introAnalysis: {
@@ -28,17 +29,9 @@ export default function Home() {
     setAnalysis(null);
     
     try {
-      // Fetch transcript
-      const response = await fetch(`/api/youtube/transcript?url=${encodeURIComponent(url)}&text=true`, {
-        method: "GET",
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch transcript");
-      }
-      
-      const data = await response.json();
-      setTranscript(data.content);
+      // Fetch transcript using shared utility
+      const transcript = await fetchTranscript(url);
+      setTranscript(transcript);
 
       // Start analysis
       setIsAnalyzing(true);
@@ -47,7 +40,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ transcript: data.content }),
+        body: JSON.stringify({ transcript }),
       });
 
       if (!analysisResponse.ok) {
