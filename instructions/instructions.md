@@ -122,4 +122,16 @@ step 5: (completed)
 Add firebase authentication to the application.
 
 step 6:
-add database functionality to the application, to save the research analysis to the database.
+Create a profile page for users who have logged in. it will show all the research analysis that the user has done. the analysis should be shown in cards and presented the same way as the research page. The analysis should have the video title, video url, thumbnail image, channel name, views, published date, transcript (click to show), research question, and analysis (click to show and hide). basically the same as the research page but for the user who has logged in.
+include these functions:
+- pagination:display 15 results per page.
+- delete button: delete the analysis from the database. confirmation required before deletion.
+
+
+
+
+step 7:
+add database functionality to the application, to save the research analysis to the database. (supabase documentation here: /supabase-doc.md) i saved the supabase key in the .env file.
+
+in the research page, after an user, who has logged in, enters the research question and clicks analyze, the analysis should be saved to the database. and can be viewed in that users profile page. 
+

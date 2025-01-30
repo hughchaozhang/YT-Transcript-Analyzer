@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { Dialog } from "@headlessui/react";
 import { fetchTranscript, getVideoIdFromUrl } from "@/lib/youtubeId-fetchTranscript";
+import { saveResearchAnalysis } from "@/lib/firebase/researchUtils";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { VideoAnalysis as FirestoreVideoAnalysis } from "@/lib/types/research";
 
 interface VideoResult {
   title: string;
@@ -35,9 +38,11 @@ interface VideoAnalysis {
   isAnalyzing: boolean;
   isHidden: boolean;
   error?: string;
+  isSaved?: boolean;
 }
 
 export default function SearchPage() {
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [researchQuestion, setResearchQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -127,6 +132,33 @@ export default function SearchPage() {
           isHidden: false
         }
       }));
+
+      // Save to Firestore if user is logged in
+      if (user) {
+        try {
+          console.log('Preparing to save analysis to Firestore...');
+          const firestoreData: FirestoreVideoAnalysis = {
+            videoId,
+            videoTitle: video.title || 'Untitled Video',
+            videoUrl: video.link,
+            thumbnailUrl: video.thumbnail?.static || '',
+            channelName: video.channel?.name || 'Unknown Channel',
+            views: typeof video.views === 'number' ? video.views : 0,
+            publishedDate: video.published_date || 'No date',
+            transcript,
+            researchQuestion,
+            analysis: analysisData,
+            createdAt: Date.now()
+          };
+          
+          console.log('Firestore data prepared:', firestoreData);
+          const docId = await saveResearchAnalysis(user.uid, firestoreData);
+          console.log('Analysis saved to Firestore with ID:', docId);
+        } catch (firestoreErr) {
+          console.error('Error saving analysis to Firestore:', firestoreErr);
+          setError(firestoreErr instanceof Error ? firestoreErr.message : 'Failed to save analysis to Firestore');
+        }
+      }
     } catch (err) {
       setVideoAnalyses(prev => ({
         ...prev,
@@ -237,14 +269,14 @@ export default function SearchPage() {
                       </Link>
                     </p>
                     <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                      <span>{video.views.toLocaleString()} views</span>
+                      <span>{typeof video.views === 'number' ? video.views.toLocaleString() : 'N/A'} views</span>
                       <span>•</span>
-                      <span>{video.published_date}</span>
+                      <span>{video.published_date || 'No date'}</span>
                       <span>•</span>
-                      <span>{video.duration}</span>
+                      <span>{video.duration || 'N/A'}</span>
                     </div>
                     <p className="text-gray-300 text-sm mt-2 line-clamp-2">
-                      {video.description}
+                      {video.description || 'No description available'}
                     </p>
                     <div className="flex gap-2 mt-4">
                       <button
